@@ -1,0 +1,116 @@
+import { validationResult } from 'express-validator';
+import Order from '../models/Order.js';
+import Raffle from '../models/Raffle.js';
+import OrderService from '../services/OrderService.js';
+
+export const createOrder = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    
+    const { raffleId, quantity, buyerInfo } = req.body;
+    
+    // Verificar que la rifa existe y está activa
+    const raffle = await Raffle.findById(raffleId);
+    if (!raffle) {
+      return res.status(404).json({ error: 'Rifa no encontrada' });
+    }
+    
+    if (raffle.status !== 'active') {
+      return res.status(400).json({ error: 'La rifa no está activa' });
+    }
+    
+    // Calcular total
+    const totalAmount = quantity * raffle.pricePerNumber;
+    
+    // Crear pedido
+    const order = new Order({
+      raffle: raffleId,
+      quantity,
+      buyerInfo,
+      totalAmount,
+      status: 'pending_payment'
+    });
+    
+    await order.save();
+    await order.populate('raffle');
+    
+    res.status(201).json(order);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const uploadProof = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    
+    if (!order) {
+      return res.status(404).json({ error: 'Pedido no encontrado' });
+    }
+    
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se proporcionó archivo' });
+    }
+    
+    // En producción, aquí deberías subir el archivo a un bucket (S3, Cloudinary, etc.)
+    // Por ahora, guardamos la URL/path del archivo
+    const fileUrl = `/uploads/${req.file.filename}`;
+    
+    order.paymentProofUrl = fileUrl;
+    order.status = 'pending_approval';
+    await order.save();
+    
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const getOrders = async (req, res) => {
+  try {
+    const { status } = req.query;
+    const filter = status ? { status } : {};
+    
+    const orders = await Order.find(filter)
+      .populate('raffle')
+      .populate('paymentMethod')
+      .sort({ createdAt: -1 });
+    
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const approveOrder = async (req, res) => {
+  try {
+    const order = await OrderService.approveOrder(req.params.id);
+    await order.populate('raffle');
+    await order.populate('paymentMethod');
+    
+    res.json(order);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const cancelOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    
+    if (!order) {
+      return res.status(404).json({ error: 'Pedido no encontrado' });
+    }
+    
+    order.status = 'cancelled';
+    await order.save();
+    
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
