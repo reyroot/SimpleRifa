@@ -11,10 +11,12 @@ export const useConfigStore = defineStore('config', () => {
     backgroundColor: '#f5f5f5',
     textColor: '#333333',
     logoUrl: '',
+    logoFile: '',
     faviconUrl: '',
     contactEmail: '',
     contactPhone: '',
-    footerText: '© 2024 Sistema de Rifas. Todos los derechos reservados.'
+    footerText: '© 2024 Sistema de Rifas. Todos los derechos reservados.',
+    currency: 'USD'
   });
   const loading = ref(false);
   const error = ref(null);

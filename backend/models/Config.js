@@ -51,6 +51,16 @@ const ConfigSchema = new mongoose.Schema({
     type: String,
     default: '© 2024 Sistema de Rifas. Todos los derechos reservados.',
     trim: true
+  },
+  currency: {
+    type: String,
+    enum: ['USD', 'VES'],
+    default: 'USD',
+    trim: true
+  },
+  logoFile: {
+    type: String,
+    trim: true
   }
 }, {
   timestamps: true

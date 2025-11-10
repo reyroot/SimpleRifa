@@ -8,6 +8,7 @@ import adminRaffleRoutes from './adminRaffles.js';
 import adminOrderRoutes from './adminOrders.js';
 import adminPaymentMethodRoutes from './adminPaymentMethods.js';
 import configRoutes from './config.js';
+import statsRoutes from './stats.js';
 import { adminCheck } from '../middleware/adminCheck.js';
 
 const router = express.Router();
@@ -18,6 +19,7 @@ router.use('/orders', orderRoutes);
 router.use('/payment-methods', paymentMethodRoutes);
 router.use('/tickets', ticketRoutes);
 router.use('/config', configRoutes);
+router.use('/stats', statsRoutes);
 router.use('/admin', adminRoutes);
 
 // Rutas admin (protegidas)

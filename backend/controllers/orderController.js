@@ -59,11 +59,37 @@ export const uploadProof = async (req, res) => {
     // Validar que la rifa esté activa
     if (order.raffle && order.raffle.status !== 'active') {
       // Si la rifa no está activa, cancelar el pedido automáticamente
+      // Eliminar tickets temporales si existen (aunque no deberían existir en este punto)
+      await Ticket.deleteMany({ 
+        order: order._id, 
+        isTemporary: true 
+      });
       order.status = 'cancelled';
       await order.save();
       return res.status(400).json({ 
         error: `La rifa "${order.raffle.title}" ya no está activa. Tu pedido ha sido cancelado automáticamente.` 
       });
+    }
+    
+    // Validar tiempo: 30 minutos antes de vencer la rifa
+    if (order.raffle.drawDate) {
+      const drawDate = new Date(order.raffle.drawDate);
+      const now = new Date();
+      const timeUntilDraw = drawDate - now;
+      const thirtyMinutes = 30 * 60 * 1000; // 30 minutos en milisegundos
+      
+      if (timeUntilDraw < thirtyMinutes) {
+        // Eliminar tickets temporales si existen
+        await Ticket.deleteMany({ 
+          order: order._id, 
+          isTemporary: true 
+        });
+        order.status = 'cancelled';
+        await order.save();
+        return res.status(400).json({ 
+          error: `La rifa vence en menos de 30 minutos. Ya no se pueden procesar nuevos pagos.` 
+        });
+      }
     }
     
     // En producción, aquí deberías subir el archivo a un bucket (S3, Cloudinary, etc.)
@@ -74,7 +100,16 @@ export const uploadProof = async (req, res) => {
     order.status = 'pending_approval';
     await order.save();
     
-    res.json(order);
+    // Crear tickets temporales cuando se sube el comprobante
+    const TicketService = (await import('../services/TicketService.js')).default;
+    const tickets = await TicketService.generateAndSaveTickets(
+      order.raffle,
+      order,
+      order.quantity,
+      true // isTemporary = true
+    );
+    
+    res.json({ order, tickets });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -135,6 +170,12 @@ export const cancelOrder = async (req, res) => {
       return res.status(400).json({ error: 'No se puede cancelar un pedido completado' });
     }
     
+    // Eliminar tickets temporales asociados a este pedido para liberar los números
+    await Ticket.deleteMany({ 
+      order: order._id, 
+      isTemporary: true 
+    });
+    
     order.status = 'cancelled';
     await order.save();
     
@@ -156,6 +197,12 @@ export const deleteOrder = async (req, res) => {
     if (!['pending_payment', 'pending_approval'].includes(order.status)) {
       return res.status(400).json({ error: 'Solo se pueden eliminar pedidos pendientes de pago o aprobación' });
     }
+    
+    // Eliminar tickets temporales asociados a este pedido para liberar los números
+    await Ticket.deleteMany({ 
+      order: order._id, 
+      isTemporary: true 
+    });
     
     await Order.findByIdAndDelete(req.params.id);
     

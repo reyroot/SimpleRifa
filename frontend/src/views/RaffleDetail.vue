@@ -45,7 +45,7 @@
               <div class="detail-icon">💰</div>
               <div class="detail-content">
                 <span class="detail-label">Precio por número</span>
-                <span class="detail-value">${{ rafflesStore.currentRaffle.pricePerNumber.toLocaleString() }}</span>
+                <span class="detail-value">{{ getCurrencySymbol() }} {{ rafflesStore.currentRaffle.pricePerNumber.toLocaleString() }}</span>
               </div>
             </div>
             <div class="detail-card-modern">
@@ -94,10 +94,12 @@ import { onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useRafflesStore } from '../store/raffles';
 import { useAuthStore } from '../store/auth';
+import { useConfigStore } from '../store/config';
 
 const route = useRoute();
 const rafflesStore = useRafflesStore();
 const authStore = useAuthStore();
+const configStore = useConfigStore();
 
 const isAdmin = computed(() => authStore.hasToken);
 
@@ -123,6 +125,10 @@ function getStatusText(status) {
   };
   return statusMap[status] || status;
 }
+
+function getCurrencySymbol() {
+  return configStore.config.currency === 'VES' ? 'Bs' : '$';
+}
 </script>
 
 <style scoped>
@@ -135,8 +141,14 @@ function getStatusText(status) {
 
 .main-content {
   max-width: 1200px;
-  margin: 2rem auto;
+  margin: 1rem auto;
   padding: 0 1rem;
+}
+
+@media (min-width: 768px) {
+  .main-content {
+    margin: 2rem auto;
+  }
 }
 
 .loading, .error {
@@ -160,8 +172,14 @@ function getStatusText(status) {
 
 .images-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: 1fr;
   gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .images-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
 }
 
 .detail-image {
@@ -211,10 +229,16 @@ function getStatusText(status) {
 
 .info-section h1 {
   margin: 0;
-  font-size: 2.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
   color: #1a1a1a;
   flex: 1;
+}
+
+@media (min-width: 768px) {
+  .info-section h1 {
+    font-size: 2.5rem;
+  }
 }
 
 .description {
@@ -226,9 +250,17 @@ function getStatusText(status) {
 
 .info-grid-modern {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .info-grid-modern {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
 }
 
 .detail-icon {
@@ -297,8 +329,14 @@ function getStatusText(status) {
 
 .winners-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: 1fr;
   gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .winners-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
 }
 
 .winner-ticket-modern {

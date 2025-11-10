@@ -15,17 +15,55 @@ export const getRaffles = async (req, res) => {
     if (isAdminRoute) {
       const rafflesWithStats = await Promise.all(
         raffles.map(async (raffle) => {
-          const soldTicketsCount = await Ticket.countDocuments({ raffle: raffle._id });
+          // Solo contar tickets confirmados (no temporales)
+          const soldTicketsCount = await Ticket.countDocuments({ 
+            raffle: raffle._id,
+            isTemporary: false
+          });
+          // Contar también tickets temporales para porcentaje
+          const tempTicketsCount = await Ticket.countDocuments({ 
+            raffle: raffle._id,
+            isTemporary: true
+          });
+          const totalTickets = soldTicketsCount + tempTicketsCount;
+          const soldPercentage = raffle.maxNumbers > 0 
+            ? Math.round((totalTickets / raffle.maxNumbers) * 100) 
+            : 0;
           return {
             ...raffle.toObject(),
-            soldTicketsCount
+            soldTicketsCount,
+            tempTicketsCount,
+            totalTickets,
+            soldPercentage
           };
         })
       );
       return res.json(rafflesWithStats);
     }
     
-    res.json(raffles);
+    // Para rutas públicas, también agregar porcentaje vendido
+    const rafflesWithPercentage = await Promise.all(
+      raffles.map(async (raffle) => {
+        const soldTicketsCount = await Ticket.countDocuments({ 
+          raffle: raffle._id,
+          isTemporary: false
+        });
+        const tempTicketsCount = await Ticket.countDocuments({ 
+          raffle: raffle._id,
+          isTemporary: true
+        });
+        const totalTickets = soldTicketsCount + tempTicketsCount;
+        const soldPercentage = raffle.maxNumbers > 0 
+          ? Math.round((totalTickets / raffle.maxNumbers) * 100) 
+          : 0;
+        return {
+          ...raffle.toObject(),
+          soldPercentage
+        };
+      })
+    );
+    
+    res.json(rafflesWithPercentage);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

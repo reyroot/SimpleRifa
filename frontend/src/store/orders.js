@@ -34,7 +34,8 @@ export const useOrdersStore = defineStore('orders', () => {
           'Content-Type': 'multipart/form-data'
         }
       });
-      currentOrder.value = response.data;
+      // El backend ahora devuelve { order, tickets }
+      currentOrder.value = response.data.order || response.data;
       return response.data;
     } catch (err) {
       error.value = err.response?.data?.error || 'Error al subir el comprobante';

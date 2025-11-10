@@ -32,28 +32,58 @@
 
 <style scoped>
 .admin-nav-modern {
-  width: 280px;
+  width: 100%;
   background: linear-gradient(180deg, #fff 0%, #f8f9fa 100%);
-  padding: 2rem 0;
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
-  min-height: calc(100vh - 100px);
-  border-right: 3px solid transparent;
-  border-image: linear-gradient(180deg, var(--primary-color, #007bff), var(--accent-color, #28a745)) 1;
+  padding: 1rem 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-bottom: 3px solid transparent;
+  border-image: linear-gradient(90deg, var(--primary-color, #007bff), var(--accent-color, #28a745)) 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 768px) {
+  .admin-nav-modern {
+    width: 280px;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    padding: 2rem 0;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
+    min-height: calc(100vh - 100px);
+    border-right: 3px solid transparent;
+    border-bottom: none;
+    border-image: linear-gradient(180deg, var(--primary-color, #007bff), var(--accent-color, #28a745)) 1;
+    overflow-x: visible;
+  }
 }
 
 .admin-nav-item {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1.25rem 2rem;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
   color: #333;
   text-decoration: none;
   font-weight: 600;
   transition: all 0.3s ease;
-  margin: 0.5rem 1rem;
+  margin: 0.25rem 0.5rem;
   border-radius: 12px;
   position: relative;
   overflow: hidden;
+  white-space: nowrap;
+  font-size: 0.9rem;
+}
+
+@media (min-width: 768px) {
+  .admin-nav-item {
+    gap: 1rem;
+    padding: 1.25rem 2rem;
+    margin: 0.5rem 1rem;
+    font-size: 1rem;
+  }
 }
 
 .admin-nav-item::before {

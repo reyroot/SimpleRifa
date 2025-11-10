@@ -25,7 +25,8 @@ class RaffleService {
     
     const tickets = await Ticket.find({ 
       raffle: raffleId,
-      order: { $in: orderIds }
+      order: { $in: orderIds },
+      isTemporary: false // Solo tickets confirmados pueden ganar
     }).populate('order');
     
     if (tickets.length === 0) {

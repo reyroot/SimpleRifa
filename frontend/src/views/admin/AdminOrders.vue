@@ -43,7 +43,7 @@
             <strong>Cantidad:</strong> {{ order.quantity }} números
           </div>
           <div class="info-row">
-            <strong>Total:</strong> ${{ order.totalAmount.toLocaleString() }}
+            <strong>Total:</strong> {{ currencySymbol }} {{ order.totalAmount.toLocaleString() }}
           </div>
           <div class="info-row">
             <strong>Fecha:</strong> {{ formatDate(order.createdAt) }}
@@ -85,7 +85,7 @@
               </div>
               <div class="detail-item">
                 <strong>Total:</strong>
-                <span>${{ selectedOrder.totalAmount.toLocaleString() }}</span>
+                <span>{{ currencySymbol }} {{ selectedOrder.totalAmount.toLocaleString() }}</span>
               </div>
               <div class="detail-item">
                 <strong>Fecha de creación:</strong>
@@ -174,8 +174,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useOrdersStore } from '../../store/orders';
+import { useConfigStore } from '../../store/config';
 
 const ordersStore = useOrdersStore();
+const configStore = useConfigStore();
+
+const currencySymbol = computed(() => {
+  return configStore.config.currency === 'VES' ? 'Bs' : '$';
+});
 
 const selectedStatus = ref(null);
 const selectedOrder = ref(null);
@@ -291,26 +297,51 @@ function closeOrderDetails() {
 <style scoped>
 .admin-orders {
   background: #fff;
-  padding: 2rem;
-  border-radius: 20px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 h2 {
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
   border-bottom: 2px solid #e9ecef;
+  font-size: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .admin-orders {
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  }
+  
+  h2 {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    font-size: 2rem;
+  }
 }
 
 .filters {
   display: flex;
-  gap: 0.75rem;
-  margin-bottom: 2rem;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
   flex-wrap: wrap;
-  padding: 1.5rem;
+  padding: 1rem;
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+@media (min-width: 768px) {
+  .filters {
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
 }
 
 .filter-btn {
@@ -347,10 +378,18 @@ h2 {
 .order-card {
   background: #fff;
   border: 2px solid #e9ecef;
-  border-radius: 16px;
-  padding: 2rem;
+  border-radius: 12px;
+  padding: 1.5rem;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+@media (min-width: 768px) {
+  .order-card {
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
 }
 
 .order-card:hover {
@@ -413,9 +452,16 @@ h2 {
 
 .order-info-summary {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
   margin-bottom: 1rem;
+}
+
+@media (min-width: 768px) {
+  .order-info-summary {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+  }
 }
 
 .info-row {
@@ -434,9 +480,8 @@ h2 {
 
 .order-actions {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.75rem;
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid #ddd;
@@ -444,7 +489,31 @@ h2 {
 
 .approval-actions {
   display: flex;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.approval-actions button {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .order-actions {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .approval-actions {
+    flex-direction: row;
+    width: auto;
+  }
+  
+  .approval-actions button {
+    width: auto;
+  }
 }
 
 .btn-view-details {
@@ -541,19 +610,29 @@ h2 {
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 2rem;
+  padding: 1rem;
   overflow-y: auto;
 }
 
 .order-details-content {
   position: relative;
   background: #fff;
-  border-radius: 20px;
+  border-radius: 16px;
   max-width: 900px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+@media (min-width: 768px) {
+  .order-details-modal {
+    padding: 2rem;
+  }
+  
+  .order-details-content {
+    border-radius: 20px;
+  }
 }
 
 .modal-close {
@@ -617,8 +696,15 @@ h2 {
 
 .details-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .details-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+  }
 }
 
 .detail-item {
@@ -646,10 +732,27 @@ h2 {
 
 .order-details-footer {
   display: flex;
-  gap: 1rem;
-  padding: 2rem;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.5rem;
   border-top: 2px solid #e9ecef;
-  justify-content: flex-end;
+}
+
+.order-details-footer button {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .order-details-footer {
+    flex-direction: row;
+    gap: 1rem;
+    padding: 2rem;
+    justify-content: flex-end;
+  }
+  
+  .order-details-footer button {
+    width: auto;
+  }
 }
 
 .proof-modal {

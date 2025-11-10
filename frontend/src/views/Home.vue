@@ -2,8 +2,8 @@
   <div class="home">
     <header class="app-header">
       <div class="app-header-content">
-        <div v-if="configStore.config.logoUrl" class="app-header-logo">
-          <img :src="configStore.config.logoUrl" alt="Logo" />
+        <div v-if="getLogoUrl()" class="app-header-logo">
+          <img :src="getLogoUrl()" alt="Logo" />
         </div>
         <div class="app-header-title">
           <div class="app-header-title-icon">🎲</div>
@@ -19,6 +19,28 @@
     </header>
 
     <main class="main-content">
+      <!-- Top Compradores -->
+      <div v-if="topBuyers.length > 0" class="top-buyers-section modern-card">
+        <div class="section-header">
+          <h2>🏆 Top Compradores</h2>
+          <p class="section-subtitle">Las personas que más han participado</p>
+        </div>
+        <div class="buyers-list">
+          <div
+            v-for="(buyer, index) in topBuyers"
+            :key="buyer.email"
+            class="buyer-item"
+          >
+            <span class="buyer-rank">#{{ index + 1 }}</span>
+            <div class="buyer-info">
+              <span class="buyer-name">{{ buyer.name || 'Comprador' }}</span>
+              <span class="buyer-email">{{ buyer.maskedEmail }}</span>
+            </div>
+            <span class="buyer-tickets">{{ buyer.totalTickets }} tickets</span>
+          </div>
+        </div>
+      </div>
+
       <div v-if="rafflesStore.loading" class="loading">Cargando rifas...</div>
       <div v-else-if="rafflesStore.error" class="error">{{ rafflesStore.error }}</div>
       <div v-else-if="rafflesStore.raffles.length === 0" class="empty">
@@ -77,16 +99,35 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { useRafflesStore } from '../store/raffles';
 import { useConfigStore } from '../store/config';
 import RaffleCard from '../components/RaffleCard.vue';
+import api from '../services/api';
 
 const rafflesStore = useRafflesStore();
 const configStore = useConfigStore();
 const currentIndex = ref(0);
+const topBuyers = ref([]);
 let autoPlayInterval = null;
 
-onMounted(() => {
+onMounted(async () => {
   rafflesStore.fetchRaffles('active');
+  await fetchTopBuyers();
   startAutoPlay();
 });
+
+async function fetchTopBuyers() {
+  try {
+    const response = await api.get('/stats/top-buyers');
+    topBuyers.value = response.data;
+  } catch (err) {
+    console.error('Error al cargar top compradores:', err);
+  }
+}
+
+function getLogoUrl() {
+  if (configStore.config.logoFile) {
+    return `/uploads/${configStore.config.logoFile}`;
+  }
+  return configStore.config.logoUrl || '';
+}
 
 onUnmounted(() => {
   stopAutoPlay();
@@ -146,8 +187,15 @@ function resetAutoPlay() {
 
 .main-content {
   max-width: 1200px;
-  margin: 2rem auto;
+  margin: 1rem auto;
   padding: 0 1rem;
+}
+
+/* Mobile First */
+@media (min-width: 768px) {
+  .main-content {
+    margin: 2rem auto;
+  }
 }
 
 .loading, .error, .empty {
@@ -167,15 +215,15 @@ function resetAutoPlay() {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem 0;
+  padding: 1rem 0;
 }
 
 .carousel-wrapper {
   position: relative;
   width: 100%;
   overflow: hidden;
-  border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .carousel-track {
@@ -187,25 +235,26 @@ function resetAutoPlay() {
 .carousel-slide {
   min-width: 100%;
   flex-shrink: 0;
-  padding: 1rem;
+  padding: 0.5rem;
 }
 
 .carousel-controls {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 1.5rem;
-  margin-top: 2rem;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .carousel-btn {
-  width: 50px;
-  height: 50px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   border: none;
   background: var(--primary-color, #007bff);
   color: #fff;
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: bold;
   cursor: pointer;
   display: flex;
@@ -213,6 +262,33 @@ function resetAutoPlay() {
   justify-content: center;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+/* Mobile First - Responsive */
+@media (min-width: 768px) {
+  .carousel-container {
+    padding: 2rem 0;
+  }
+  
+  .carousel-wrapper {
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  }
+  
+  .carousel-slide {
+    padding: 1rem;
+  }
+  
+  .carousel-controls {
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+  
+  .carousel-btn {
+    width: 50px;
+    height: 50px;
+    font-size: 2rem;
+  }
 }
 
 .carousel-btn:hover:not(:disabled) {

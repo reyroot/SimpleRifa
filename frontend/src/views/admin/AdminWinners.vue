@@ -104,26 +104,45 @@ async function fetchWinners() {
 <style scoped>
 .admin-winners {
   background: #fff;
-  padding: 2rem;
-  border-radius: 20px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .header-section {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 2px solid #e9ecef;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e9ecef;
 }
 
 .header-section h1 {
   margin: 0;
   color: #333;
-  font-size: 2rem;
+  font-size: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .admin-winners {
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  }
+  
+  .header-section {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    gap: 1rem;
+  }
+  
+  .header-section h1 {
+    font-size: 2rem;
+  }
 }
 
 .raffle-filter {
@@ -172,9 +191,15 @@ async function fetchWinners() {
 }
 
 .winner-card {
-  padding: 2rem;
+  padding: 1.5rem;
   border: 2px solid #e9ecef;
   transition: all 0.3s ease;
+}
+
+@media (min-width: 768px) {
+  .winner-card {
+    padding: 2rem;
+  }
 }
 
 .winner-card:hover {

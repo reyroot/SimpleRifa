@@ -67,7 +67,7 @@
                 ></div>
               </div>
             </td>
-            <td>${{ raffle.pricePerNumber.toLocaleString() }}</td>
+            <td>{{ currencySymbol }} {{ raffle.pricePerNumber.toLocaleString() }}</td>
             <td>{{ formatDate(raffle.createdAt) }}</td>
             <td>
               <span v-if="raffle.drawDate">{{ formatDate(raffle.drawDate) }}</span>
@@ -277,10 +277,16 @@
 <script setup>
 import { ref, onMounted, reactive, computed } from 'vue';
 import { useRafflesStore } from '../../store/raffles';
+import { useConfigStore } from '../../store/config';
 import { useRouter } from 'vue-router';
 
 const rafflesStore = useRafflesStore();
+const configStore = useConfigStore();
 const router = useRouter();
+
+const currencySymbol = computed(() => {
+  return configStore.config.currency === 'VES' ? 'Bs' : '$';
+});
 
 const showCreateModal = ref(false);
 const editingRaffle = ref(null);
@@ -554,18 +560,34 @@ function closeDrawModal() {
 <style scoped>
 .admin-raffles {
   background: #fff;
-  padding: 2rem;
-  border-radius: 20px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .header-section {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
   border-bottom: 2px solid #e9ecef;
+}
+
+@media (min-width: 768px) {
+  .admin-raffles {
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  }
+  
+  .header-section {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+  }
 }
 
 .btn-edit, .btn-draw, .btn-delete, .btn-view {
@@ -601,11 +623,13 @@ function closeDrawModal() {
 
 .raffles-table {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 800px;
 }
 
 thead {
@@ -613,20 +637,37 @@ thead {
 }
 
 th {
-  padding: 1.25rem 1rem;
+  padding: 0.875rem 0.75rem;
   text-align: left;
   border-bottom: 2px solid #dee2e6;
   font-weight: 700;
   color: #495057;
   text-transform: uppercase;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   letter-spacing: 0.5px;
 }
 
 td {
-  padding: 1.25rem 1rem;
+  padding: 0.875rem 0.75rem;
   text-align: left;
   border-bottom: 1px solid #e9ecef;
+  font-size: 0.9rem;
+}
+
+@media (min-width: 768px) {
+  table {
+    min-width: auto;
+  }
+  
+  th {
+    padding: 1.25rem 1rem;
+    font-size: 0.85rem;
+  }
+  
+  td {
+    padding: 1.25rem 1rem;
+    font-size: 1rem;
+  }
 }
 
 .status-badge {
@@ -665,30 +706,64 @@ td {
   flex-wrap: wrap;
 }
 
+.actions button {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.6rem;
+}
+
+@media (min-width: 768px) {
+  .actions button {
+    font-size: 1.1rem;
+    padding: 0.5rem 0.75rem;
+  }
+}
+
 .filters-section {
-  margin-bottom: 2rem;
-  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .filters {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 768px) {
+  .filters-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+  
+  .filters {
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
 }
 
 .filter-btn {
-  padding: 0.75rem 1.5rem;
+  padding: 0.625rem 1rem;
   border: 2px solid #e9ecef;
   background: #fff;
   border-radius: 12px;
   cursor: pointer;
   font-weight: 600;
+  font-size: 0.9rem;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+@media (min-width: 768px) {
+  .filter-btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+  }
 }
 
 .filter-btn:hover {
@@ -707,8 +782,14 @@ td {
 
 .stats-summary {
   display: flex;
-  gap: 1.5rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
+}
+
+@media (min-width: 768px) {
+  .stats-summary {
+    gap: 1.5rem;
+  }
 }
 
 .stat-item {
@@ -800,13 +881,21 @@ td {
 
 .modal-content {
   background: #fff;
-  padding: 2rem;
-  border-radius: 20px;
-  width: 90%;
+  padding: 1.5rem;
+  border-radius: 16px;
+  width: 95%;
   max-width: 700px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+@media (min-width: 768px) {
+  .modal-content {
+    padding: 2rem;
+    border-radius: 20px;
+    width: 90%;
+  }
 }
 
 .modal-content h3 {
@@ -966,9 +1055,25 @@ td {
 
 .form-actions {
   display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
+  flex-direction: column;
+  gap: 0.75rem;
   margin-top: 1rem;
+}
+
+.form-actions button {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .form-actions {
+    flex-direction: row;
+    gap: 1rem;
+    justify-content: flex-end;
+  }
+  
+  .form-actions button {
+    width: auto;
+  }
 }
 
 /* Estilos para modal de sorteo */
@@ -980,9 +1085,23 @@ td {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   padding-bottom: 1rem;
   border-bottom: 2px solid #e9ecef;
+}
+
+.modal-header h3 {
+  font-size: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .modal-header {
+    margin-bottom: 2rem;
+  }
+  
+  .modal-header h3 {
+    font-size: 1.75rem;
+  }
 }
 
 .modal-close {

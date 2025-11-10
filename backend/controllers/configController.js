@@ -10,6 +10,30 @@ export const getConfig = async (req, res) => {
   }
 };
 
+export const uploadLogo = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se proporcionó archivo' });
+    }
+
+    const fileUrl = `/uploads/${req.file.filename}`;
+    
+    let config = await Config.findOne();
+    if (!config) {
+      config = new Config({ logoFile: req.file.filename });
+      await config.save();
+    } else {
+      config.logoFile = req.file.filename;
+      await config.save();
+    }
+
+    res.json({ logoFile: req.file.filename, logoUrl: fileUrl });
+  } catch (error) {
+    console.error('Error uploading logo:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const updateConfig = async (req, res) => {
   try {
     const errors = validationResult(req);

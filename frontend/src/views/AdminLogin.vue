@@ -63,13 +63,23 @@ async function handleLogin() {
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, var(--primary-color, #007bff) 0%, var(--accent-color, #28a745) 100%);
-  padding: 2rem;
+  padding: 1rem;
 }
 
 .login-container {
   width: 100%;
   max-width: 450px;
-  padding: 3rem;
+  padding: 2rem;
+}
+
+@media (min-width: 768px) {
+  .admin-login {
+    padding: 2rem;
+  }
+  
+  .login-container {
+    padding: 3rem;
+  }
 }
 
 .login-header {
@@ -81,9 +91,15 @@ async function handleLogin() {
 }
 
 .login-icon {
-  font-size: 4rem;
+  font-size: 3rem;
   animation: bounce 2s infinite;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+@media (min-width: 768px) {
+  .login-icon {
+    font-size: 4rem;
+  }
 }
 
 .login-form {

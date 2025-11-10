@@ -16,26 +16,24 @@
         <span class="status-badge active">Activa</span>
       </div>
       <p v-if="raffle.description" class="description">{{ raffle.description }}</p>
-      <div class="details-grid">
-        <div class="detail-card">
-          <div class="detail-icon">💰</div>
-          <div class="detail-content">
-            <span class="detail-label">Precio por número</span>
-            <span class="detail-value">${{ raffle.pricePerNumber.toLocaleString() }}</span>
-          </div>
+      <div class="details-compact">
+        <div class="detail-row">
+          <span class="detail-icon-small">💰</span>
+          <span class="detail-text">{{ currencySymbol }} {{ raffle.pricePerNumber.toLocaleString() }}</span>
         </div>
-        <div class="detail-card">
-          <div class="detail-icon">🎫</div>
-          <div class="detail-content">
-            <span class="detail-label">Números totales</span>
-            <span class="detail-value">{{ raffle.maxNumbers.toLocaleString() }}</span>
-          </div>
+        <div class="detail-row">
+          <span class="detail-icon-small">🎫</span>
+          <span class="detail-text">{{ raffle.maxNumbers.toLocaleString() }} números</span>
         </div>
-        <div v-if="raffle.drawDate" class="detail-card">
-          <div class="detail-icon">📅</div>
-          <div class="detail-content">
-            <span class="detail-label">Fecha de sorteo</span>
-            <span class="detail-value">{{ formatDate(raffle.drawDate) }}</span>
+        <div v-if="raffle.drawDate" class="detail-row">
+          <span class="detail-icon-small">📅</span>
+          <span class="detail-text">{{ formatDate(raffle.drawDate) }}</span>
+        </div>
+        <div v-if="raffle.soldPercentage !== undefined" class="detail-row sold-row">
+          <span class="detail-icon-small">📊</span>
+          <span class="detail-text">{{ raffle.soldPercentage }}% vendido</span>
+          <div class="progress-bar-mini">
+            <div class="progress-fill-mini" :style="{ width: raffle.soldPercentage + '%' }"></div>
           </div>
         </div>
       </div>
@@ -48,18 +46,28 @@
 </template>
 
 <script setup>
-defineProps({
+import { computed } from 'vue';
+import { useConfigStore } from '../store/config';
+
+const props = defineProps({
   raffle: {
     type: Object,
     required: true
   }
 });
 
+const configStore = useConfigStore();
+
+const currencySymbol = computed(() => {
+  return configStore.config.currency === 'VES' ? 'Bs' : '$';
+});
+
 function formatDate(dateString) {
   const date = new Date(dateString);
+  // Formato más compacto para mejor visualización
   return date.toLocaleDateString('es-ES', {
     year: 'numeric',
-    month: 'long',
+    month: 'short',
     day: 'numeric'
   });
 }
@@ -75,7 +83,51 @@ function formatDate(dateString) {
   display: flex;
   flex-direction: column;
   height: 100%;
-  min-height: 600px;
+  min-height: 500px;
+}
+
+/* Mobile First - Responsive */
+@media (max-width: 768px) {
+  .raffle-card {
+    min-height: auto;
+    border-radius: 16px;
+  }
+  
+  .card-content {
+    padding: 1.25rem;
+  }
+  
+  .card-title {
+    font-size: 1.25rem;
+  }
+  
+  .details-compact {
+    padding: 0.875rem;
+    gap: 0.5rem;
+  }
+  
+  .detail-row {
+    font-size: 0.85rem;
+  }
+  
+  .detail-icon-small {
+    font-size: 1rem;
+  }
+  
+  .btn-primary {
+    padding: 0.875rem 1.25rem;
+    font-size: 0.95rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .card-content {
+    padding: 2rem;
+  }
+  
+  .card-title {
+    font-size: 1.75rem;
+  }
 }
 
 .raffle-card:hover {
@@ -86,9 +138,15 @@ function formatDate(dateString) {
 .image-container {
   position: relative;
   width: 100%;
-  height: 350px;
+  height: 280px;
   overflow: hidden;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+@media (min-width: 768px) {
+  .image-container {
+    height: 320px;
+  }
 }
 
 .image-container img {
@@ -131,7 +189,7 @@ function formatDate(dateString) {
 }
 
 .card-content {
-  padding: 2.5rem;
+  padding: 1.5rem;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -141,102 +199,109 @@ function formatDate(dateString) {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1rem;
-  gap: 1rem;
+  margin-bottom: 0.75rem;
+  gap: 0.75rem;
 }
 
 .card-title {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #1a1a1a;
   margin: 0;
-  line-height: 1.2;
+  line-height: 1.3;
   flex: 1;
 }
 
 .status-badge {
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.85rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .status-badge.active {
   background: linear-gradient(135deg, #28a745, #20c997);
   color: #fff;
-  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
 }
 
 .description {
   color: #666;
-  margin-bottom: 2rem;
-  font-size: 1rem;
-  line-height: 1.6;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.details-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.detail-row.sold-row {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.detail-icon-small {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.detail-text {
+  font-weight: 600;
+  color: var(--primary-color, #007bff);
   flex: 1;
 }
 
-.details-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
+.progress-bar-mini {
+  width: 100%;
+  height: 6px;
+  background: #e9ecef;
+  border-radius: 3px;
+  overflow: hidden;
 }
 
-.detail-card {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 12px;
-  padding: 1.25rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.detail-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.detail-icon {
-  font-size: 2rem;
-  line-height: 1;
-}
-
-.detail-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.detail-label {
-  font-size: 0.75rem;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 600;
-}
-
-.detail-value {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--primary-color, #007bff);
+.progress-fill-mini {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color, #007bff), var(--accent-color, #28a745));
+  transition: width 0.5s ease;
+  border-radius: 3px;
 }
 
 .btn-primary {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   width: 100%;
-  padding: 1.25rem 2rem;
+  padding: 1rem 1.5rem;
   background: linear-gradient(135deg, var(--primary-color, #007bff), var(--accent-color, #28a745));
   color: #fff;
   text-align: center;
   text-decoration: none;
   border-radius: 12px;
   font-weight: 600;
-  font-size: 1.1rem;
+  font-size: 1rem;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
   margin-top: auto;

@@ -23,7 +23,7 @@ export const getMyTickets = async (req, res) => {
     const tickets = await Ticket.find({ ownerEmail: email.toLowerCase() })
       .populate('raffle')
       .populate('order')
-      .sort({ createdAt: -1 });
+      .sort({ isTemporary: 1, createdAt: -1 }); // Tickets confirmados primero
     
     // Agrupar tickets por rifa
     const ticketsByRaffle = {};

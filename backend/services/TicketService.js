@@ -1,15 +1,26 @@
 import Ticket from '../models/Ticket.js';
 
 class TicketService {
-  async generateAndSaveTickets(raffle, order, quantity) {
+  async generateAndSaveTickets(raffle, order, quantity, isTemporary = false) {
     const maxNumbers = raffle.maxNumbers;
     
-    // Obtener todos los números ya vendidos para esta rifa
-    const soldTickets = await Ticket.find({ raffle: raffle._id })
-      .select('numberString');
+    // Obtener todos los números ya vendidos o reservados temporalmente para esta rifa
+    const soldTickets = await Ticket.find({ 
+      raffle: raffle._id,
+      isTemporary: false // Solo considerar tickets confirmados como vendidos
+    }).select('numberString');
+    
+    // También considerar tickets temporales para evitar duplicados
+    const tempTickets = await Ticket.find({ 
+      raffle: raffle._id,
+      isTemporary: true
+    }).select('numberString');
     
     // Crear Set para búsquedas O(1)
-    const soldSet = new Set(soldTickets.map(t => t.numberString));
+    const soldSet = new Set([
+      ...soldTickets.map(t => t.numberString),
+      ...tempTickets.map(t => t.numberString)
+    ]);
     
     const ticketsToSave = [];
     let attempts = 0;
@@ -35,7 +46,8 @@ class TicketService {
           raffle: raffle._id,
           order: order._id,
           numberString: numString,
-          ownerEmail: order.buyerInfo.email
+          ownerEmail: order.buyerInfo.email,
+          isTemporary: isTemporary
         });
         
         // Añadir al Set para evitar duplicados en la misma tanda
@@ -50,6 +62,15 @@ class TicketService {
     }
     
     return savedTickets;
+  }
+
+  async confirmTemporaryTickets(orderId) {
+    // Confirmar todos los tickets temporales de un pedido
+    const result = await Ticket.updateMany(
+      { order: orderId, isTemporary: true },
+      { $set: { isTemporary: false } }
+    );
+    return result;
   }
 }
 

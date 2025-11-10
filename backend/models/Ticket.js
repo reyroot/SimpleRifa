@@ -26,6 +26,11 @@ const TicketSchema = new mongoose.Schema({
   isWinner: {
     type: Boolean,
     default: false
+  },
+  isTemporary: {
+    type: Boolean,
+    default: false,
+    index: true
   }
 }, {
   timestamps: true

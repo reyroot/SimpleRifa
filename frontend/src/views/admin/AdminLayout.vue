@@ -55,13 +55,25 @@ function handleLogout() {
 
 .admin-container {
   display: flex;
+  flex-direction: column;
   max-width: 1400px;
   margin: 0 auto;
 }
 
 .admin-content {
   flex: 1;
-  padding: 2rem;
+  padding: 1rem;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .admin-container {
+    flex-direction: row;
+  }
+  
+  .admin-content {
+    padding: 2rem;
+  }
 }
 </style>
 

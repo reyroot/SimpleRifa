@@ -39,7 +39,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['uploaded']);
+const emit = defineEmits(['uploaded', 'tickets-assigned']);
 
 const ordersStore = useOrdersStore();
 const selectedFile = ref(null);
@@ -74,13 +74,39 @@ async function uploadFile() {
   error.value = null;
   
   try {
-    await ordersStore.uploadProof(props.orderId, selectedFile.value);
+    const result = await ordersStore.uploadProof(props.orderId, selectedFile.value);
     uploaded.value = true;
+    
+    // Emitir los tickets asignados
+    if (result.tickets && result.tickets.length > 0) {
+      emit('tickets-assigned', result.tickets);
+    }
+    
     emit('uploaded');
   } catch (err) {
     error.value = err.response?.data?.error || 'Error al subir el archivo';
   } finally {
     uploading.value = false;
+  }
+}
+
+function showDollarAnimation() {
+  const container = document.querySelector('.payment-uploader');
+  if (!container) return;
+  
+  // Crear múltiples símbolos de dólar animados
+  for (let i = 0; i < 20; i++) {
+    const dollar = document.createElement('div');
+    dollar.className = 'dollar-animation';
+    dollar.textContent = '$';
+    dollar.style.left = Math.random() * 100 + '%';
+    dollar.style.animationDelay = Math.random() * 0.5 + 's';
+    dollar.style.animationDuration = (Math.random() * 1 + 2) + 's';
+    container.appendChild(dollar);
+    
+    setTimeout(() => {
+      dollar.remove();
+    }, 3000);
   }
 }
 </script>
@@ -159,6 +185,33 @@ async function uploadFile() {
   color: #dc3545;
   margin-top: 1rem;
   text-align: center;
+}
+
+.dollar-animation {
+  position: absolute;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #28a745;
+  pointer-events: none;
+  z-index: 1000;
+  animation: dollarFloat 3s ease-out forwards;
+  text-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+}
+
+@keyframes dollarFloat {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-150px) scale(1.5) rotate(360deg);
+  }
+}
+
+.payment-uploader {
+  position: relative;
+  overflow: visible;
 }
 </style>
 

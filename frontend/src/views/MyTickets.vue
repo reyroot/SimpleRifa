@@ -106,7 +106,7 @@
               </div>
               <div class="detail-item">
                 <span class="detail-label">Total:</span>
-                <span class="detail-value">${{ order.totalAmount.toLocaleString() }}</span>
+                <span class="detail-value">{{ getCurrencySymbol() }} {{ order.totalAmount.toLocaleString() }}</span>
               </div>
               <div class="detail-item">
                 <span class="detail-label">Fecha:</span>
@@ -175,20 +175,34 @@
               <span v-if="raffleData.tickets.some(t => t.isWinner)" class="badge-modern winner">🏆 TIENES GANADOR</span>
             </div>
             
+            <div v-if="raffleData.tickets.some(t => t.isTemporary)" class="temporary-warning modern-card">
+              <div class="warning-header">
+                <span class="warning-icon">⏳</span>
+                <h4>Tickets Pendientes de Confirmación</h4>
+              </div>
+              <p class="warning-text">
+                Algunos de tus números están pendientes de confirmación. Se confirmarán automáticamente una vez que el administrador apruebe tu pago.
+              </p>
+            </div>
             <div class="tickets-grid-group">
               <div
                 v-for="ticket in raffleData.tickets"
                 :key="ticket._id"
                 class="ticket-card-compact"
-                :class="{ winner: ticket.isWinner }"
+                :class="{ 
+                  winner: ticket.isWinner,
+                  temporary: ticket.isTemporary 
+                }"
               >
                 <div class="ticket-compact-header">
                   <span class="ticket-number-compact">{{ ticket.numberString }}</span>
                   <span v-if="ticket.isWinner" class="winner-badge-small">🏆</span>
+                  <span v-if="ticket.isTemporary" class="temporary-badge-small">⏳</span>
                 </div>
                 <div class="ticket-compact-info">
                   <span class="ticket-compact-date">{{ formatDate(ticket.createdAt) }}</span>
                   <span class="ticket-compact-order">Pedido #{{ ticket.order?._id?.slice(-8) || 'N/A' }}</span>
+                  <span v-if="ticket.isTemporary" class="temporary-status">Pendiente de confirmación</span>
                 </div>
               </div>
             </div>
@@ -205,11 +219,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import api from '../services/api';
 import { useOrdersStore } from '../store/orders';
+import { useConfigStore } from '../store/config';
 
 const ordersStore = useOrdersStore();
+const configStore = useConfigStore();
 
 const email = ref('');
 const otpCode = ref('');
@@ -321,6 +337,17 @@ function formatDate(dateString) {
   });
 }
 
+function getLogoUrl() {
+  if (configStore.config.logoFile) {
+    return `/uploads/${configStore.config.logoFile}`;
+  }
+  return configStore.config.logoUrl || '';
+}
+
+function getCurrencySymbol() {
+  return configStore.config.currency === 'VES' ? 'Bs' : '$';
+}
+
 async function handleFileSelect(event, orderId) {
   const file = event.target.files[0];
   if (!file) return;
@@ -357,8 +384,14 @@ async function handleFileSelect(event, orderId) {
 
 .main-content {
   max-width: 1200px;
-  margin: 2rem auto;
+  margin: 1rem auto;
   padding: 0 1rem;
+}
+
+@media (min-width: 768px) {
+  .main-content {
+    margin: 2rem auto;
+  }
 }
 
 .search-section {
@@ -384,7 +417,14 @@ async function handleFileSelect(event, orderId) {
 
 .search-form {
   display: flex;
+  flex-direction: column;
   gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .search-form {
+    flex-direction: row;
+  }
 }
 
 .email-input {
@@ -438,8 +478,15 @@ async function handleFileSelect(event, orderId) {
 
 .tickets-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .tickets-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
 }
 
 .ticket-card-modern {
@@ -596,8 +643,15 @@ async function handleFileSelect(event, orderId) {
 
 .pending-orders-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .pending-orders-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
 }
 
 .pending-order-card {
@@ -760,8 +814,15 @@ async function handleFileSelect(event, orderId) {
 
 .tickets-grid-group {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .tickets-grid-group {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+  }
 }
 
 .ticket-card-compact {
@@ -822,6 +883,56 @@ async function handleFileSelect(event, orderId) {
 
 .ticket-compact-order {
   color: #999;
+}
+
+.temporary-warning {
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+  border: 2px solid #ffc107;
+  border-radius: 12px;
+}
+
+.warning-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.warning-icon {
+  font-size: 1.5rem;
+}
+
+.warning-header h4 {
+  margin: 0;
+  color: #856404;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.warning-text {
+  margin: 0;
+  color: #856404;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.ticket-card-compact.temporary {
+  border-color: #ffc107;
+  background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+}
+
+.temporary-badge-small {
+  font-size: 1.25rem;
+}
+
+.temporary-status {
+  color: #856404;
+  font-weight: 600;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  display: block;
 }
 
 .upload-proof-section {

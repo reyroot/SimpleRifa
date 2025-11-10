@@ -130,13 +130,38 @@
         <div class="form-section">
           <h3>Branding</h3>
           <div class="form-group">
-            <label>URL del Logo</label>
-            <input
-              v-model="formData.logoUrl"
-              type="url"
-              placeholder="https://ejemplo.com/logo.png"
-            />
-            <small>URL de la imagen del logo (se mostrará en el encabezado)</small>
+            <label>Logo de la Aplicación</label>
+            <div class="logo-upload-section">
+              <div v-if="formData.logoFile || formData.logoUrl" class="logo-preview">
+                <img :src="getLogoPreview()" alt="Logo actual" class="logo-preview-img" />
+                <button type="button" @click="removeLogo" class="btn-remove-logo">✕</button>
+              </div>
+              <div class="logo-upload-options">
+                <div class="upload-option">
+                  <label class="upload-label">
+                    <input
+                      ref="logoFileInput"
+                      type="file"
+                      accept="image/*"
+                      @change="handleLogoFileSelect"
+                      style="display: none"
+                    />
+                    <span class="upload-btn">📤 Subir Logo</span>
+                    <small>Sube una imagen desde tu computadora</small>
+                  </label>
+                </div>
+                <div class="upload-divider">o</div>
+                <div class="upload-option">
+                  <label>URL del Logo</label>
+                  <input
+                    v-model="formData.logoUrl"
+                    type="url"
+                    placeholder="https://ejemplo.com/logo.png"
+                  />
+                  <small>O ingresa una URL de imagen</small>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="form-group">
             <label>URL del Favicon</label>
@@ -146,6 +171,18 @@
               placeholder="https://ejemplo.com/favicon.ico"
             />
             <small>URL del favicon (icono de la pestaña del navegador)</small>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Configuración de Moneda</h3>
+          <div class="form-group">
+            <label>Moneda de la Plataforma</label>
+            <select v-model="formData.currency" class="modern-select">
+              <option value="USD">USD (Dólares)</option>
+              <option value="VES">VES (Bolívares Venezolanos)</option>
+            </select>
+            <small>La moneda se mostrará en todos los precios de la plataforma</small>
           </div>
         </div>
 
@@ -201,6 +238,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useConfigStore } from '../../store/config';
+import api from '../../services/api';
 
 const configStore = useConfigStore();
 const saving = ref(false);
@@ -214,11 +252,16 @@ const formData = reactive({
   backgroundColor: '#f5f5f5',
   textColor: '#333333',
   logoUrl: '',
+  logoFile: '',
   faviconUrl: '',
   contactEmail: '',
   contactPhone: '',
-  footerText: ''
+  footerText: '',
+  currency: 'USD'
 });
+
+const logoFileInput = ref(null);
+const uploadingLogo = ref(false);
 
 const previewStyles = computed(() => ({
   '--preview-primary': formData.primaryColor,
@@ -265,14 +308,64 @@ function resetForm() {
     loadConfig();
   }
 }
+
+async function handleLogoFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  if (file.size > 5 * 1024 * 1024) {
+    alert('El archivo es demasiado grande (máx. 5MB)');
+    return;
+  }
+  
+  uploadingLogo.value = true;
+  try {
+    const uploadFormData = new FormData();
+    uploadFormData.append('logo', file);
+    
+    const response = await api.post('/admin/config/upload-logo', uploadFormData);
+    formData.logoFile = response.data.logoFile;
+    formData.logoUrl = response.data.logoUrl;
+    alert('Logo subido exitosamente');
+  } catch (err) {
+    alert(err.response?.data?.error || 'Error al subir el logo');
+  } finally {
+    uploadingLogo.value = false;
+    if (logoFileInput.value) {
+      logoFileInput.value.value = '';
+    }
+  }
+}
+
+function getLogoPreview() {
+  if (formData.logoFile) {
+    return `/uploads/${formData.logoFile}`;
+  }
+  return formData.logoUrl || '';
+}
+
+function removeLogo() {
+  if (confirm('¿Eliminar el logo actual?')) {
+    formData.logoFile = '';
+    formData.logoUrl = '';
+  }
+}
 </script>
 
 <style scoped>
 .admin-config {
   background: #fff;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+@media (min-width: 768px) {
+  .admin-config {
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
 }
 
 .header-section {
@@ -343,8 +436,15 @@ function resetForm() {
 
 .color-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .color-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+  }
 }
 
 .color-input-group {
@@ -440,10 +540,26 @@ function resetForm() {
 
 .form-actions {
   display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
+  flex-direction: column;
+  gap: 0.75rem;
   padding-top: 1rem;
   border-top: 1px solid #ddd;
+}
+
+.form-actions button {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .form-actions {
+    flex-direction: row;
+    gap: 1rem;
+    justify-content: flex-end;
+  }
+  
+  .form-actions button {
+    width: auto;
+  }
 }
 
 .btn-primary, .btn-secondary {

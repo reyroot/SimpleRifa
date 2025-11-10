@@ -1,6 +1,7 @@
 import express from 'express';
 import { body } from 'express-validator';
-import { getConfig, updateConfig } from '../controllers/configController.js';
+import { getConfig, updateConfig, uploadLogo } from '../controllers/configController.js';
+import { uploadLogo as uploadLogoMiddleware } from '../middleware/uploadLogo.js';
 
 const router = express.Router();
 
@@ -34,6 +35,9 @@ const validateUrlIfPresent = (fieldName) => {
 // Ruta pública para obtener configuración
 router.get('/', getConfig);
 
+// Ruta admin para subir logo
+router.post('/upload-logo', uploadLogoMiddleware, uploadLogo);
+
 // Ruta admin para actualizar configuración
 router.put(
   '/',
@@ -48,7 +52,8 @@ router.put(
     validateUrlIfPresent('logoUrl'),
     validateUrlIfPresent('faviconUrl'),
     body('contactPhone').optional(),
-    body('footerText').optional()
+    body('footerText').optional(),
+    body('currency').optional().isIn(['USD', 'VES']).withMessage('La moneda debe ser USD o VES')
   ],
   updateConfig
 );

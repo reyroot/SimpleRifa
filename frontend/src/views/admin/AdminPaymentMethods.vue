@@ -183,25 +183,53 @@ async function deleteMethod(id) {
 <style scoped>
 .admin-payment-methods {
   background: #fff;
-  padding: 2rem;
-  border-radius: 20px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .header-section {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
   border-bottom: 2px solid #e9ecef;
 }
 
 .header-section h2 {
   margin: 0;
   color: #1a1a1a;
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
+}
+
+.header-section .btn-primary {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .admin-payment-methods {
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  }
+  
+  .header-section {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+  }
+  
+  .header-section h2 {
+    font-size: 2rem;
+  }
+  
+  .header-section .btn-primary {
+    width: auto;
+  }
 }
 
 .btn-primary {
@@ -257,20 +285,33 @@ async function deleteMethod(id) {
 
 .methods-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: 1fr;
+  gap: 1rem;
 }
 
 .method-card {
   background: #fff;
   border: 2px solid #e9ecef;
-  border-radius: 16px;
-  padding: 2rem;
+  border-radius: 12px;
+  padding: 1.5rem;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .methods-list {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .method-card {
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
 }
 
 .method-card:hover {
@@ -406,33 +447,54 @@ async function deleteMethod(id) {
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 2rem;
+  padding: 1rem;
 }
 
 .modal-content {
   background: #fff;
   padding: 0;
-  border-radius: 20px;
-  width: 90%;
+  border-radius: 16px;
+  width: 95%;
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
+@media (min-width: 768px) {
+  .modal-overlay {
+    padding: 2rem;
+  }
+  
+  .modal-content {
+    border-radius: 20px;
+    width: 90%;
+  }
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 2rem;
+  padding: 1.5rem;
   border-bottom: 2px solid #e9ecef;
 }
 
 .modal-header h3 {
   margin: 0;
   color: #333;
-  font-size: 1.75rem;
+  font-size: 1.25rem;
   font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .modal-header {
+    padding: 2rem;
+  }
+  
+  .modal-header h3 {
+    font-size: 1.75rem;
+  }
 }
 
 .modal-close {
@@ -459,8 +521,15 @@ async function deleteMethod(id) {
 .method-form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  padding: 2rem;
+  gap: 1.25rem;
+  padding: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .method-form {
+    gap: 1.5rem;
+    padding: 2rem;
+  }
 }
 
 .form-group {
@@ -527,11 +596,27 @@ async function deleteMethod(id) {
 
 .form-actions {
   display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
+  flex-direction: column;
+  gap: 0.75rem;
   margin-top: 1rem;
   padding-top: 1.5rem;
   border-top: 1px solid #e9ecef;
+}
+
+.form-actions button {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .form-actions {
+    flex-direction: row;
+    gap: 1rem;
+    justify-content: flex-end;
+  }
+  
+  .form-actions button {
+    width: auto;
+  }
 }
 
 .btn-secondary {
