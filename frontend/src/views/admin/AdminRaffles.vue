@@ -97,6 +97,88 @@
       </table>
     </div>
 
+    <!-- Modal de sorteo -->
+    <div v-if="showDrawModal" class="modal-overlay" @click="closeDrawModal">
+      <div class="modal-content draw-modal" @click.stop>
+        <div class="modal-header">
+          <h3>Realizar Sorteo - {{ selectedRaffleForDraw?.title }}</h3>
+          <button class="modal-close" @click="closeDrawModal">✕</button>
+        </div>
+        
+        <div class="draw-type-selection">
+          <label class="draw-type-option">
+            <input 
+              type="radio" 
+              v-model="drawType" 
+              value="random"
+              @change="toggleDrawType"
+            />
+            <div class="option-content">
+              <span class="option-icon">🎲</span>
+              <div>
+                <strong>Sorteo Aleatorio</strong>
+                <p>El sistema seleccionará un ganador al azar</p>
+              </div>
+            </div>
+          </label>
+          
+          <label class="draw-type-option">
+            <input 
+              type="radio" 
+              v-model="drawType" 
+              value="manual"
+              @change="toggleDrawType"
+            />
+            <div class="option-content">
+              <span class="option-icon">✋</span>
+              <div>
+                <strong>Sorteo Manual</strong>
+                <p>Selecciona uno o más números ganadores manualmente</p>
+              </div>
+            </div>
+          </label>
+        </div>
+
+        <div v-if="drawType === 'manual'" class="manual-draw-section">
+          <div v-if="loadingTickets" class="loading">Cargando tickets...</div>
+          <div v-else-if="raffleTickets.length === 0" class="empty">No hay tickets vendidos para esta rifa</div>
+          <div v-else class="tickets-selection">
+            <p class="selection-hint">
+              Selecciona {{ selectedWinningNumbers.length }} número(s) ganador(es):
+            </p>
+            <div class="tickets-grid-select">
+              <button
+                v-for="ticket in raffleTickets"
+                :key="ticket.numberString"
+                @click="toggleTicketSelection(ticket.numberString)"
+                class="ticket-select-btn"
+                :class="{ 
+                  selected: selectedWinningNumbers.includes(ticket.numberString),
+                  winner: ticket.isWinner
+                }"
+                :disabled="ticket.isWinner"
+              >
+                {{ ticket.numberString }}
+                <span v-if="ticket.isWinner" class="already-winner">🏆</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" @click="closeDrawModal" class="btn-secondary">Cancelar</button>
+          <button 
+            @click="confirmDraw" 
+            class="btn-primary"
+            :disabled="drawType === 'manual' && selectedWinningNumbers.length === 0"
+          >
+            <span>Realizar Sorteo</span>
+            <span class="btn-arrow">→</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal de creación/edición -->
     <div v-if="showCreateModal || editingRaffle" class="modal-overlay" @click="closeModal">
       <div class="modal-content" @click.stop>
@@ -205,6 +287,12 @@ const editingRaffle = ref(null);
 const selectedStatus = ref(null);
 const selectedImages = ref([]);
 const uploadingImages = ref(false);
+const showDrawModal = ref(false);
+const selectedRaffleForDraw = ref(null);
+const drawType = ref('random'); // 'random' o 'manual'
+const selectedWinningNumbers = ref([]);
+const raffleTickets = ref([]);
+const loadingTickets = ref(false);
 const formData = reactive({
   title: '',
   description: '',
@@ -384,15 +472,82 @@ async function deleteRaffle(id) {
 }
 
 async function drawRaffle(id) {
-  if (confirm('¿Realizar el sorteo ahora?')) {
+  const raffle = rafflesStore.raffles.find(r => r._id === id);
+  if (!raffle) return;
+  
+  // Mostrar modal para elegir tipo de sorteo
+  showDrawModal.value = true;
+  selectedRaffleForDraw.value = raffle;
+  drawType.value = 'random';
+  selectedWinningNumbers.value = [];
+  raffleTickets.value = [];
+  loadingTickets.value = false;
+  
+  // Cargar tickets si es sorteo manual
+  if (drawType.value === 'manual') {
+    await loadRaffleTickets(id);
+  }
+}
+
+async function loadRaffleTickets(raffleId) {
+  loadingTickets.value = true;
+  try {
+    raffleTickets.value = await rafflesStore.getRaffleTickets(raffleId);
+  } catch (error) {
+    alert(error.response?.data?.error || 'Error al cargar tickets');
+  } finally {
+    loadingTickets.value = false;
+  }
+}
+
+function toggleDrawType() {
+  if (drawType.value === 'manual' && raffleTickets.value.length === 0) {
+    loadRaffleTickets(selectedRaffleForDraw.value._id);
+  }
+}
+
+function toggleTicketSelection(ticketNumber) {
+  const index = selectedWinningNumbers.value.indexOf(ticketNumber);
+  if (index > -1) {
+    selectedWinningNumbers.value.splice(index, 1);
+  } else {
+    selectedWinningNumbers.value.push(ticketNumber);
+  }
+}
+
+async function confirmDraw() {
+  if (!selectedRaffleForDraw.value) return;
+  
+  if (drawType.value === 'manual' && selectedWinningNumbers.value.length === 0) {
+    alert('Debes seleccionar al menos un número ganador');
+    return;
+  }
+  
+  const confirmMessage = drawType.value === 'random' 
+    ? '¿Realizar sorteo aleatorio ahora?'
+    : `¿Confirmar sorteo manual con ${selectedWinningNumbers.value.length} número(s) ganador(es)?`;
+  
+  if (confirm(confirmMessage)) {
     try {
-      await rafflesStore.drawRaffle(id);
+      const winningNumbers = drawType.value === 'manual' ? selectedWinningNumbers.value : null;
+      await rafflesStore.drawRaffle(selectedRaffleForDraw.value._id, winningNumbers);
       alert('Sorteo realizado exitosamente');
-      rafflesStore.fetchRaffles(null, true); // Recargar todas las rifas usando ruta admin
+      closeDrawModal();
+      await rafflesStore.fetchRaffles(null, true);
     } catch (error) {
       alert(error.response?.data?.error || 'Error al realizar el sorteo');
+      // Asegurar que la lista se recargue incluso si hay error
+      await rafflesStore.fetchRaffles(null, true);
     }
   }
+}
+
+function closeDrawModal() {
+  showDrawModal.value = false;
+  selectedRaffleForDraw.value = null;
+  drawType.value = 'random';
+  selectedWinningNumbers.value = [];
+  raffleTickets.value = [];
 }
 </script>
 
@@ -814,6 +969,163 @@ td {
   gap: 1rem;
   justify-content: flex-end;
   margin-top: 1rem;
+}
+
+/* Estilos para modal de sorteo */
+.draw-modal {
+  max-width: 900px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #666;
+  padding: 0.5rem;
+  line-height: 1;
+  transition: color 0.3s ease;
+}
+
+.modal-close:hover {
+  color: #dc3545;
+}
+
+.draw-type-selection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.draw-type-option {
+  display: flex;
+  align-items: center;
+  padding: 1.5rem;
+  border: 2px solid #e9ecef;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #fff;
+}
+
+.draw-type-option:hover {
+  border-color: var(--primary-color, #007bff);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.1);
+}
+
+.draw-type-option input[type="radio"] {
+  margin-right: 1rem;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.draw-type-option input[type="radio"]:checked + .option-content {
+  color: var(--primary-color, #007bff);
+}
+
+.option-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.option-icon {
+  font-size: 2.5rem;
+}
+
+.option-content strong {
+  display: block;
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+}
+
+.option-content p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.manual-draw-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px solid #e9ecef;
+}
+
+.selection-hint {
+  margin-bottom: 1rem;
+  color: #666;
+  font-weight: 600;
+}
+
+.tickets-grid-select {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 0.75rem;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.ticket-select-btn {
+  padding: 1rem;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.ticket-select-btn:hover:not(:disabled) {
+  border-color: var(--primary-color, #007bff);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+}
+
+.ticket-select-btn.selected {
+  background: linear-gradient(135deg, var(--primary-color, #007bff), var(--accent-color, #28a745));
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+}
+
+.ticket-select-btn.winner {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #e9ecef;
+}
+
+.ticket-select-btn:disabled {
+  cursor: not-allowed;
+}
+
+.already-winner {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 1.2rem;
+}
+
+.loading, .empty {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
 }
 </style>
 

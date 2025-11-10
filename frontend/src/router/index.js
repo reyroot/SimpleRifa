@@ -10,6 +10,7 @@ import AdminDashboard from '../views/admin/AdminDashboard.vue';
 import AdminRaffles from '../views/admin/AdminRaffles.vue';
 import AdminOrders from '../views/admin/AdminOrders.vue';
 import AdminPaymentMethods from '../views/admin/AdminPaymentMethods.vue';
+import AdminWinners from '../views/admin/AdminWinners.vue';
 
 const routes = [
   {
@@ -66,6 +67,11 @@ const routes = [
         path: 'config',
         name: 'AdminConfig',
         component: () => import('../views/admin/AdminConfig.vue')
+      },
+      {
+        path: 'winners',
+        name: 'AdminWinners',
+        component: AdminWinners
       }
     ]
   }

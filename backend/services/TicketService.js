@@ -44,11 +44,12 @@ class TicketService {
     }
     
     // Guardar todos los tickets en una sola operación
+    let savedTickets = [];
     if (ticketsToSave.length > 0) {
-      await Ticket.insertMany(ticketsToSave);
+      savedTickets = await Ticket.insertMany(ticketsToSave);
     }
     
-    return ticketsToSave;
+    return savedTickets;
   }
 }
 

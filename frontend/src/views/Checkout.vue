@@ -119,6 +119,32 @@
             <span class="step-icon">📤</span>
             <h2>Subir Comprobante de Pago</h2>
           </div>
+          
+          <div class="warning-box">
+            <div class="warning-header">
+              <span class="warning-icon">⚠️</span>
+              <h3>¡IMPORTANTE!</h3>
+            </div>
+            <div class="warning-content">
+              <p class="warning-text">
+                <strong>Si ya realizaste el pago, NO olvides subir el comprobante.</strong>
+              </p>
+              <p class="warning-details">
+                Sin el comprobante de pago, no podremos aprobar tu pedido y <strong>perderás tus números</strong>. 
+                Asegúrate de subir una imagen clara del comprobante antes de cerrar esta página.
+              </p>
+              <div class="warning-steps">
+                <p><strong>Pasos a seguir:</strong></p>
+                <ol>
+                  <li>Realiza el pago según las instrucciones del método seleccionado</li>
+                  <li>Toma una foto clara del comprobante o captura de pantalla</li>
+                  <li>Sube el comprobante usando el botón de abajo</li>
+                  <li>Espera la confirmación de que se subió correctamente</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+
           <div class="order-info-modern">
             <div class="info-item-modern">
               <span class="info-label-modern">Pedido</span>
@@ -471,6 +497,73 @@ function handleUploadComplete() {
   gap: 1rem;
   justify-content: center;
   flex-wrap: wrap;
+}
+
+.warning-box {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+  border: 3px solid #ffc107;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 24px rgba(255, 193, 7, 0.3);
+}
+
+.warning-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.warning-icon {
+  font-size: 2.5rem;
+}
+
+.warning-header h3 {
+  margin: 0;
+  color: #856404;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.warning-content {
+  color: #856404;
+}
+
+.warning-text {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.warning-details {
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.warning-steps {
+  background: rgba(255, 255, 255, 0.7);
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-top: 1rem;
+}
+
+.warning-steps p {
+  margin: 0 0 0.75rem 0;
+  font-weight: 600;
+  color: #856404;
+}
+
+.warning-steps ol {
+  margin: 0;
+  padding-left: 1.5rem;
+  line-height: 2;
+}
+
+.warning-steps li {
+  margin-bottom: 0.5rem;
+  color: #856404;
 }
 </style>
 

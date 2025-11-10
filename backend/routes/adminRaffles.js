@@ -9,12 +9,14 @@ import {
   uploadRaffleImages
 } from '../controllers/raffleController.js';
 import { uploadRaffleImages as uploadMiddleware } from '../middleware/uploadRaffleImages.js';
+import { getRaffleTickets } from '../controllers/ticketController.js';
 
 const router = express.Router();
 
 // Todas estas rutas requieren admin (middleware aplicado en index.js)
 router.get('/', getRaffles);
 router.get('/:id', getRaffleById);
+router.get('/:id/tickets', getRaffleTickets);
 router.post(
   '/',
   [

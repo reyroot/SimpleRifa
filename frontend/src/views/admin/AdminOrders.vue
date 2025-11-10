@@ -29,7 +29,7 @@
           <span class="status-badge" :class="order.status">{{ getStatusText(order.status) }}</span>
         </div>
         
-        <div class="order-info">
+        <div class="order-info-summary">
           <div class="info-row">
             <strong>Rifa:</strong> {{ order.raffle?.title }}
           </div>
@@ -40,36 +40,108 @@
             <strong>Email:</strong> {{ order.buyerInfo.email }}
           </div>
           <div class="info-row">
-            <strong>Teléfono:</strong> {{ order.buyerInfo.phone }}
-          </div>
-          <div class="info-row">
             <strong>Cantidad:</strong> {{ order.quantity }} números
           </div>
           <div class="info-row">
             <strong>Total:</strong> ${{ order.totalAmount.toLocaleString() }}
           </div>
-          <div v-if="order.paymentMethod" class="info-row">
-            <strong>Método de pago:</strong> {{ order.paymentMethod.name }}
+          <div class="info-row">
+            <strong>Fecha:</strong> {{ formatDate(order.createdAt) }}
           </div>
-          <div v-if="order.paymentProofUrl" class="info-row proof-section">
-            <strong>Comprobante:</strong>
-            <div class="proof-container">
-              <img 
-                :src="order.paymentProofUrl" 
-                :alt="`Comprobante pedido ${order._id.slice(-8)}`"
-                class="proof-image"
-                @click="showProofModal(order.paymentProofUrl)"
-              />
-              <button @click="showProofModal(order.paymentProofUrl)" class="proof-view-btn">
-                Ver en pantalla completa
-              </button>
+        </div>
+
+        <div class="order-actions">
+          <button @click="viewOrderDetails(order)" class="btn-view-details">Ver Detalles</button>
+          <div v-if="order.status === 'pending_approval' || order.status === 'pending_payment'" class="approval-actions">
+            <button v-if="order.status === 'pending_approval'" @click="approveOrder(order._id)" class="btn-approve">Aprobar</button>
+            <button v-if="order.status === 'pending_approval'" @click="cancelOrder(order._id)" class="btn-cancel">Rechazar</button>
+            <button v-if="order.status === 'pending_payment' || order.status === 'pending_approval'" @click="deleteOrder(order._id)" class="btn-delete-order">Eliminar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para ver detalles del pedido -->
+    <div v-if="selectedOrder" class="order-details-modal" @click="closeOrderDetails">
+      <div class="order-details-content" @click.stop>
+        <button class="modal-close" @click="closeOrderDetails">✕</button>
+        
+        <div class="order-details-header">
+          <h2>Detalles del Pedido #{{ selectedOrder._id.slice(-8) }}</h2>
+          <span class="status-badge" :class="selectedOrder.status">{{ getStatusText(selectedOrder.status) }}</span>
+        </div>
+
+        <div class="order-details-body">
+          <div class="details-section">
+            <h3>Información del Pedido</h3>
+            <div class="details-grid">
+              <div class="detail-item">
+                <strong>Rifa:</strong>
+                <span>{{ selectedOrder.raffle?.title }}</span>
+              </div>
+              <div class="detail-item">
+                <strong>Cantidad:</strong>
+                <span>{{ selectedOrder.quantity }} números</span>
+              </div>
+              <div class="detail-item">
+                <strong>Total:</strong>
+                <span>${{ selectedOrder.totalAmount.toLocaleString() }}</span>
+              </div>
+              <div class="detail-item">
+                <strong>Fecha de creación:</strong>
+                <span>{{ formatDate(selectedOrder.createdAt) }}</span>
+              </div>
+              <div v-if="selectedOrder.paymentApprovalDate" class="detail-item">
+                <strong>Fecha de aprobación:</strong>
+                <span>{{ formatDate(selectedOrder.paymentApprovalDate) }}</span>
+              </div>
             </div>
           </div>
-          <div v-if="order.status === 'completed' && order.tickets && order.tickets.length > 0" class="info-row tickets-section">
-            <strong>Números asignados:</strong>
+
+          <div class="details-section">
+            <h3>Información del Comprador</h3>
+            <div class="details-grid">
+              <div class="detail-item">
+                <strong>Nombre:</strong>
+                <span>{{ selectedOrder.buyerInfo.name }}</span>
+              </div>
+              <div class="detail-item">
+                <strong>Email:</strong>
+                <span>{{ selectedOrder.buyerInfo.email }}</span>
+              </div>
+              <div class="detail-item">
+                <strong>Teléfono:</strong>
+                <span>{{ selectedOrder.buyerInfo.phone }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="selectedOrder.paymentMethod" class="details-section">
+            <h3>Método de Pago</h3>
+            <div class="details-grid">
+              <div class="detail-item">
+                <strong>Método:</strong>
+                <span>{{ selectedOrder.paymentMethod.name }}</span>
+              </div>
+              <div v-if="selectedOrder.paymentMethod.details" class="detail-item full-width">
+                <strong>Detalles:</strong>
+                <div v-html="selectedOrder.paymentMethod.details"></div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="selectedOrder.paymentProofUrl" class="details-section">
+            <h3>Comprobante de Pago</h3>
+            <button @click="showProofModal(selectedOrder.paymentProofUrl)" class="proof-view-btn">
+              Ver Comprobante
+            </button>
+          </div>
+
+          <div v-if="selectedOrder.status === 'completed' && selectedOrder.tickets && selectedOrder.tickets.length > 0" class="details-section">
+            <h3>Números Asignados</h3>
             <div class="tickets-list">
               <span 
-                v-for="ticket in order.tickets" 
+                v-for="ticket in selectedOrder.tickets" 
                 :key="ticket._id || ticket.numberString"
                 class="ticket-number"
                 :class="{ winner: ticket.isWinner }"
@@ -79,14 +151,12 @@
               </span>
             </div>
           </div>
-          <div class="info-row">
-            <strong>Fecha:</strong> {{ formatDate(order.createdAt) }}
-          </div>
         </div>
 
-        <div v-if="order.status === 'pending_approval'" class="order-actions">
-          <button @click="approveOrder(order._id)" class="btn-approve">Aprobar</button>
-          <button @click="cancelOrder(order._id)" class="btn-cancel">Rechazar</button>
+        <div v-if="selectedOrder.status === 'pending_approval' || selectedOrder.status === 'pending_payment'" class="order-details-footer">
+          <button v-if="selectedOrder.status === 'pending_approval'" @click="approveOrder(selectedOrder._id)" class="btn-approve">Aprobar Pedido</button>
+          <button v-if="selectedOrder.status === 'pending_approval'" @click="cancelOrder(selectedOrder._id)" class="btn-cancel">Rechazar Pedido</button>
+          <button v-if="selectedOrder.status === 'pending_payment' || selectedOrder.status === 'pending_approval'" @click="deleteOrder(selectedOrder._id)" class="btn-delete-order">Eliminar Pedido</button>
         </div>
       </div>
     </div>
@@ -108,6 +178,7 @@ import { useOrdersStore } from '../../store/orders';
 const ordersStore = useOrdersStore();
 
 const selectedStatus = ref(null);
+const selectedOrder = ref(null);
 const proofModalImage = ref(null);
 const showModal = ref(false);
 
@@ -154,7 +225,14 @@ async function approveOrder(orderId) {
     try {
       await ordersStore.approveOrder(orderId);
       alert('Pedido aprobado exitosamente');
-      ordersStore.fetchOrders();
+      await ordersStore.fetchOrders();
+      if (selectedOrder.value && selectedOrder.value._id === orderId) {
+        // Actualizar el pedido seleccionado
+        const updatedOrder = ordersStore.orders.find(o => o._id === orderId);
+        if (updatedOrder) {
+          selectedOrder.value = updatedOrder;
+        }
+      }
     } catch (error) {
       alert(error.response?.data?.error || 'Error al aprobar el pedido');
     }
@@ -166,9 +244,27 @@ async function cancelOrder(orderId) {
     try {
       await ordersStore.cancelOrder(orderId);
       alert('Pedido rechazado');
-      ordersStore.fetchOrders();
+      await ordersStore.fetchOrders();
+      if (selectedOrder.value && selectedOrder.value._id === orderId) {
+        closeOrderDetails();
+      }
     } catch (error) {
       alert(error.response?.data?.error || 'Error al rechazar el pedido');
+    }
+  }
+}
+
+async function deleteOrder(orderId) {
+  if (confirm('¿Eliminar este pedido? Esta acción no se puede deshacer.')) {
+    try {
+      await ordersStore.deleteOrder(orderId);
+      alert('Pedido eliminado exitosamente');
+      await ordersStore.fetchOrders();
+      if (selectedOrder.value && selectedOrder.value._id === orderId) {
+        closeOrderDetails();
+      }
+    } catch (error) {
+      alert(error.response?.data?.error || 'Error al eliminar el pedido');
     }
   }
 }
@@ -181,6 +277,14 @@ function showProofModal(imageUrl) {
 function closeProofModal() {
   showModal.value = false;
   proofModalImage.value = null;
+}
+
+function viewOrderDetails(order) {
+  selectedOrder.value = order;
+}
+
+function closeOrderDetails() {
+  selectedOrder.value = null;
 }
 </script>
 
@@ -307,9 +411,9 @@ h2 {
   box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
 }
 
-.order-info {
+.order-info-summary {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 0.75rem;
   margin-bottom: 1rem;
 }
@@ -330,10 +434,34 @@ h2 {
 
 .order-actions {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 1rem;
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid #ddd;
+}
+
+.approval-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn-view-details {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, var(--primary-color, #007bff), var(--accent-color, #28a745));
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.btn-view-details:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
 }
 
 .btn-approve, .btn-cancel {
@@ -366,50 +494,162 @@ h2 {
   box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
 }
 
-.proof-section {
-  grid-column: 1 / -1;
-}
-
-.proof-container {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-.proof-image {
-  max-width: 300px;
-  max-height: 300px;
-  border-radius: 8px;
-  border: 2px solid #e9ecef;
+.btn-delete-order {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #6c757d, #5a6268);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
   cursor: pointer;
-  transition: transform 0.3s ease;
-  object-fit: contain;
-  background: #f8f9fa;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
 }
 
-.proof-image:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.btn-delete-order:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
 }
 
 .proof-view-btn {
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.5rem;
   background: var(--primary-color, #007bff);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
   font-weight: 600;
   font-size: 0.9rem;
   transition: all 0.3s ease;
-  align-self: flex-start;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
 }
 
 .proof-view-btn:hover {
   background: var(--accent-color, #28a745);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+}
+
+.order-details-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.order-details-content {
+  position: relative;
+  background: #fff;
+  border-radius: 20px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #dc3545;
+  color: #fff;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  z-index: 1001;
+}
+
+.modal-close:hover {
+  background: #c82333;
+  transform: scale(1.1);
+}
+
+.order-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.order-details-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 1.75rem;
+}
+
+.order-details-body {
+  padding: 2rem;
+}
+
+.details-section {
+  margin-bottom: 2rem;
+}
+
+.details-section:last-child {
+  margin-bottom: 0;
+}
+
+.details-section h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.detail-item strong {
+  color: #666;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-item span,
+.detail-item div {
+  color: #333;
+  font-size: 1rem;
+}
+
+.detail-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.order-details-footer {
+  display: flex;
+  gap: 1rem;
+  padding: 2rem;
+  border-top: 2px solid #e9ecef;
+  justify-content: flex-end;
 }
 
 .proof-modal {

@@ -1,9 +1,10 @@
 import Raffle from '../models/Raffle.js';
 import Ticket from '../models/Ticket.js';
 import Order from '../models/Order.js';
+import EmailService from './EmailService.js';
 
 class RaffleService {
-  async drawWinner(raffleId) {
+  async drawWinner(raffleId, winningTicketNumbers = null) {
     const raffle = await Raffle.findById(raffleId);
     
     if (!raffle) {
@@ -25,28 +26,55 @@ class RaffleService {
     const tickets = await Ticket.find({ 
       raffle: raffleId,
       order: { $in: orderIds }
-    });
+    }).populate('order');
     
     if (tickets.length === 0) {
       throw new Error('No hay tickets vendidos para esta rifa');
     }
     
-    // Seleccionar ticket(s) ganador(es) al azar
-    const randomIndex = Math.floor(Math.random() * tickets.length);
-    const winningTicket = tickets[randomIndex];
+    let winningTickets = [];
     
-    // Marcar ticket como ganador
-    winningTicket.isWinner = true;
-    await winningTicket.save();
+    if (winningTicketNumbers && winningTicketNumbers.length > 0) {
+      // Sorteo manual: usar los números especificados
+      for (const ticketNumber of winningTicketNumbers) {
+        const ticket = tickets.find(t => t.numberString === ticketNumber);
+        if (!ticket) {
+          throw new Error(`El número ${ticketNumber} no existe o no está vendido`);
+        }
+        if (ticket.isWinner) {
+          throw new Error(`El número ${ticketNumber} ya es ganador`);
+        }
+        ticket.isWinner = true;
+        await ticket.save();
+        winningTickets.push(ticket);
+      }
+    } else {
+      // Sorteo aleatorio: seleccionar un ticket al azar
+      const randomIndex = Math.floor(Math.random() * tickets.length);
+      const winningTicket = tickets[randomIndex];
+      winningTicket.isWinner = true;
+      await winningTicket.save();
+      winningTickets.push(winningTicket);
+    }
     
     // Actualizar rifa
-    raffle.winningTickets.push(winningTicket._id);
+    winningTickets.forEach(ticket => {
+      raffle.winningTickets.push(ticket._id);
+    });
     raffle.status = 'finished';
     await raffle.save();
     
+    // Enviar emails a los ganadores
+    try {
+      await EmailService.sendWinnerNotificationEmail(raffle, winningTickets);
+    } catch (emailError) {
+      console.error('Error enviando emails de ganadores:', emailError);
+      // No fallar el proceso si el email falla
+    }
+    
     return {
       raffle,
-      winningTicket
+      winningTickets
     };
   }
 }

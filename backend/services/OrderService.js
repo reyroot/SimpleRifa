@@ -1,5 +1,6 @@
 import Order from '../models/Order.js';
 import TicketService from './TicketService.js';
+import EmailService from './EmailService.js';
 
 class OrderService {
   async approveOrder(orderId) {
@@ -19,13 +20,19 @@ class OrderService {
     await order.save();
 
     // Generar y guardar tickets
-    await TicketService.generateAndSaveTickets(
+    const tickets = await TicketService.generateAndSaveTickets(
       order.raffle,
       order,
       order.quantity
     );
 
-    // TODO: Disparar evento de email al buyerInfo.email con los números generados
+    // Enviar email de confirmación con los números
+    try {
+      await EmailService.sendOrderApprovedEmail(order, tickets);
+    } catch (emailError) {
+      console.error('Error enviando email de pedido aprobado:', emailError);
+      // No fallar el proceso si el email falla
+    }
 
     return order;
   }

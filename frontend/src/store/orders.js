@@ -94,6 +94,21 @@ export const useOrdersStore = defineStore('orders', () => {
     }
   }
 
+  async function deleteOrder(orderId) {
+    loading.value = true;
+    error.value = null;
+    try {
+      await api.delete(`/admin/orders/${orderId}`);
+      orders.value = orders.value.filter(o => o._id !== orderId);
+      return true;
+    } catch (err) {
+      error.value = err.response?.data?.error || 'Error al eliminar el pedido';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   return {
     orders,
     currentOrder,
@@ -103,7 +118,8 @@ export const useOrdersStore = defineStore('orders', () => {
     uploadProof,
     fetchOrders,
     approveOrder,
-    cancelOrder
+    cancelOrder,
+    deleteOrder
   };
 });
 

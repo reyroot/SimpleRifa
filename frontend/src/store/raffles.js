@@ -85,14 +85,30 @@ export const useRafflesStore = defineStore('raffles', () => {
     }
   }
 
-  async function drawRaffle(id) {
+  async function drawRaffle(id, winningTicketNumbers = null) {
     loading.value = true;
     error.value = null;
     try {
-      const response = await api.post(`/admin/raffles/${id}/draw`);
+      const response = await api.post(`/admin/raffles/${id}/draw`, {
+        winningTicketNumbers
+      });
       return response.data;
     } catch (err) {
       error.value = err.response?.data?.error || 'Error al realizar el sorteo';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function getRaffleTickets(raffleId) {
+    loading.value = true;
+    error.value = null;
+    try {
+      const response = await api.get(`/admin/raffles/${raffleId}/tickets`);
+      return response.data;
+    } catch (err) {
+      error.value = err.response?.data?.error || 'Error al cargar tickets';
       throw err;
     } finally {
       loading.value = false;
@@ -144,6 +160,7 @@ export const useRafflesStore = defineStore('raffles', () => {
     updateRaffle,
     deleteRaffle,
     drawRaffle,
+    getRaffleTickets,
     uploadRaffleImages
   };
 });

@@ -1,6 +1,6 @@
 <template>
   <nav class="admin-nav-modern">
-    <router-link to="/admin" class="admin-nav-item" active-class="active">
+    <router-link to="/admin" class="admin-nav-item" active-class="active" exact-active-class="active">
       <span class="nav-icon">📊</span>
       <span>Dashboard</span>
     </router-link>
@@ -15,6 +15,10 @@
     <router-link to="/admin/payment-methods" class="admin-nav-item" active-class="active">
       <span class="nav-icon">💳</span>
       <span>Métodos de Pago</span>
+    </router-link>
+    <router-link to="/admin/winners" class="admin-nav-item" active-class="active">
+      <span class="nav-icon">🏆</span>
+      <span>Ganadores</span>
     </router-link>
     <router-link to="/admin/config" class="admin-nav-item" active-class="active">
       <span class="nav-icon">⚙️</span>

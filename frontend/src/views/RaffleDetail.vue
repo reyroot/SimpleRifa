@@ -2,7 +2,12 @@
   <div class="raffle-detail">
     <header class="app-header">
       <div class="app-header-content">
-        <router-link to="/" class="app-back-link">← Volver</router-link>
+        <router-link 
+          :to="isAdmin ? '/admin/raffles' : '/'" 
+          class="app-back-link"
+        >
+          ← {{ isAdmin ? 'Volver al Panel Admin' : 'Volver' }}
+        </router-link>
       </div>
     </header>
 
@@ -85,12 +90,16 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useRafflesStore } from '../store/raffles';
+import { useAuthStore } from '../store/auth';
 
 const route = useRoute();
 const rafflesStore = useRafflesStore();
+const authStore = useAuthStore();
+
+const isAdmin = computed(() => authStore.hasToken);
 
 onMounted(() => {
   rafflesStore.fetchRaffleById(route.params.id);

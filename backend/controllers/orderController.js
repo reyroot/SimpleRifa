@@ -46,7 +46,7 @@ export const createOrder = async (req, res) => {
 
 export const uploadProof = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id);
+    const order = await Order.findById(req.params.id).populate('raffle');
     
     if (!order) {
       return res.status(404).json({ error: 'Pedido no encontrado' });
@@ -54,6 +54,16 @@ export const uploadProof = async (req, res) => {
     
     if (!req.file) {
       return res.status(400).json({ error: 'No se proporcionó archivo' });
+    }
+    
+    // Validar que la rifa esté activa
+    if (order.raffle && order.raffle.status !== 'active') {
+      // Si la rifa no está activa, cancelar el pedido automáticamente
+      order.status = 'cancelled';
+      await order.save();
+      return res.status(400).json({ 
+        error: `La rifa "${order.raffle.title}" ya no está activa. Tu pedido ha sido cancelado automáticamente.` 
+      });
     }
     
     // En producción, aquí deberías subir el archivo a un bucket (S3, Cloudinary, etc.)
@@ -120,10 +130,36 @@ export const cancelOrder = async (req, res) => {
       return res.status(404).json({ error: 'Pedido no encontrado' });
     }
     
+    // Solo permitir cancelar pedidos que no estén completados
+    if (order.status === 'completed') {
+      return res.status(400).json({ error: 'No se puede cancelar un pedido completado' });
+    }
+    
     order.status = 'cancelled';
     await order.save();
     
     res.json(order);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const deleteOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    
+    if (!order) {
+      return res.status(404).json({ error: 'Pedido no encontrado' });
+    }
+    
+    // Solo permitir eliminar pedidos pendientes (pending_payment o pending_approval)
+    if (!['pending_payment', 'pending_approval'].includes(order.status)) {
+      return res.status(400).json({ error: 'Solo se pueden eliminar pedidos pendientes de pago o aprobación' });
+    }
+    
+    await Order.findByIdAndDelete(req.params.id);
+    
+    res.json({ message: 'Pedido eliminado exitosamente' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
