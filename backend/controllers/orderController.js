@@ -1,6 +1,7 @@
 import { validationResult } from 'express-validator';
 import Order from '../models/Order.js';
 import Raffle from '../models/Raffle.js';
+import Ticket from '../models/Ticket.js';
 import OrderService from '../services/OrderService.js';
 
 export const createOrder = async (req, res) => {
@@ -79,7 +80,21 @@ export const getOrders = async (req, res) => {
       .populate('paymentMethod')
       .sort({ createdAt: -1 });
     
-    res.json(orders);
+    // Para cada pedido completado, obtener sus tickets
+    const ordersWithTickets = await Promise.all(
+      orders.map(async (order) => {
+        const orderObj = order.toObject();
+        if (order.status === 'completed') {
+          const tickets = await Ticket.find({ order: order._id })
+            .select('numberString isWinner')
+            .sort({ numberString: 1 });
+          orderObj.tickets = tickets;
+        }
+        return orderObj;
+      })
+    );
+    
+    res.json(ordersWithTickets);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

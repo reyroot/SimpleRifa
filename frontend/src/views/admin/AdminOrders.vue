@@ -51,9 +51,33 @@
           <div v-if="order.paymentMethod" class="info-row">
             <strong>Método de pago:</strong> {{ order.paymentMethod.name }}
           </div>
-          <div v-if="order.paymentProofUrl" class="info-row">
+          <div v-if="order.paymentProofUrl" class="info-row proof-section">
             <strong>Comprobante:</strong>
-            <a :href="order.paymentProofUrl" target="_blank" class="proof-link">Ver comprobante</a>
+            <div class="proof-container">
+              <img 
+                :src="order.paymentProofUrl" 
+                :alt="`Comprobante pedido ${order._id.slice(-8)}`"
+                class="proof-image"
+                @click="showProofModal(order.paymentProofUrl)"
+              />
+              <button @click="showProofModal(order.paymentProofUrl)" class="proof-view-btn">
+                Ver en pantalla completa
+              </button>
+            </div>
+          </div>
+          <div v-if="order.status === 'completed' && order.tickets && order.tickets.length > 0" class="info-row tickets-section">
+            <strong>Números asignados:</strong>
+            <div class="tickets-list">
+              <span 
+                v-for="ticket in order.tickets" 
+                :key="ticket._id || ticket.numberString"
+                class="ticket-number"
+                :class="{ winner: ticket.isWinner }"
+              >
+                {{ ticket.numberString }}
+                <span v-if="ticket.isWinner" class="winner-badge">🏆</span>
+              </span>
+            </div>
           </div>
           <div class="info-row">
             <strong>Fecha:</strong> {{ formatDate(order.createdAt) }}
@@ -66,6 +90,14 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal para ver comprobante -->
+    <div v-if="showModal" class="proof-modal" @click="closeProofModal">
+      <div class="proof-modal-content" @click.stop>
+        <button class="proof-modal-close" @click="closeProofModal">✕</button>
+        <img :src="proofModalImage" alt="Comprobante de pago" class="proof-modal-image" />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -76,6 +108,8 @@ import { useOrdersStore } from '../../store/orders';
 const ordersStore = useOrdersStore();
 
 const selectedStatus = ref(null);
+const proofModalImage = ref(null);
+const showModal = ref(false);
 
 const statuses = [
   { value: null, label: 'Todos' },
@@ -137,6 +171,16 @@ async function cancelOrder(orderId) {
       alert(error.response?.data?.error || 'Error al rechazar el pedido');
     }
   }
+}
+
+function showProofModal(imageUrl) {
+  proofModalImage.value = imageUrl;
+  showModal.value = true;
+}
+
+function closeProofModal() {
+  showModal.value = false;
+  proofModalImage.value = null;
 }
 </script>
 
@@ -320,6 +364,141 @@ h2 {
 .btn-cancel:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+}
+
+.proof-section {
+  grid-column: 1 / -1;
+}
+
+.proof-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.proof-image {
+  max-width: 300px;
+  max-height: 300px;
+  border-radius: 8px;
+  border: 2px solid #e9ecef;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  object-fit: contain;
+  background: #f8f9fa;
+}
+
+.proof-image:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.proof-view-btn {
+  padding: 0.5rem 1rem;
+  background: var(--primary-color, #007bff);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  align-self: flex-start;
+}
+
+.proof-view-btn:hover {
+  background: var(--accent-color, #28a745);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.proof-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+}
+
+.proof-modal-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.proof-modal-close {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #dc3545;
+  color: #fff;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  z-index: 1001;
+}
+
+.proof-modal-close:hover {
+  background: #c82333;
+  transform: scale(1.1);
+}
+
+.proof-modal-image {
+  max-width: 100%;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.tickets-section {
+  grid-column: 1 / -1;
+}
+
+.tickets-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.ticket-number {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #e7f3ff 0%, #d0e7ff 100%);
+  border: 2px solid var(--primary-color, #007bff);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--primary-color, #007bff);
+}
+
+.ticket-number.winner {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+  border-color: #ffc107;
+  color: #856404;
+}
+
+.winner-badge {
+  font-size: 1rem;
 }
 </style>
 

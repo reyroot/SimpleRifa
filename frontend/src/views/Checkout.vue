@@ -48,7 +48,7 @@
                 v-model="buyerInfo.phone"
                 type="tel"
                 required
-                placeholder="+54 11 1234-5678"
+                placeholder="+58 412 1234567"
                 class="modern-input"
               />
             </div>
